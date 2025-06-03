@@ -84,10 +84,16 @@ function getAllJsFiles(targetPath) {
 const argv = yargs
   .usage('Usage: $0 <path>')
   .demandCommand(1)
+  .option('only-errors', {
+    type: 'boolean',
+    description: 'Print only errors (potential SQL injections)',
+    default: false,
+  })
   .help()
   .argv;
 
 const targetPath = argv._[0];
+const onlyErrors = argv['only-errors'];
 const files = getAllJsFiles(targetPath);
 
 let totalRaw = 0;
@@ -105,16 +111,17 @@ files.forEach(file => {
       totalUnsafe++;
       hadError = true;
       console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
-    } else {
+    } else if (!onlyErrors) {
       totalSafe++;
       console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
     }
   });
 });
 
-console.log(`\n[stats] Total raw function calls: ${totalRaw}`);
-console.log(`[stats] Total potential SQL injections: ${totalUnsafe}`);
+console.log(`[stats]`);
+console.log(`  Total raw function calls: ${totalRaw}`);
+console.log(`  Total potential SQL injections: ${totalUnsafe}`);
 
 if (hadError) {
   process.exit(1);
-} 
+}

@@ -121,10 +121,17 @@ let hadError = false;
 
 const files = await getAllJsFiles(targetPath);
 
+// Determine if user explicitly wants node_modules
+const userExplicitlyWantsNodeModules = targetPath.includes('node_modules');
+
 const limit = pLimit(256);
 
 await Promise.all(files.map(file =>
   limit(async () => {
+    // Skip node_modules unless explicitly requested
+    if (!userExplicitlyWantsNodeModules && file.includes('node_modules')) {
+      return;
+    }
     let stat;
     try {
       stat = await fs.stat(file);

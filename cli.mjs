@@ -20,28 +20,21 @@ const rawMethods = [
   'havingRaw',
 ];
 
-function isConstantStringExpression(node) {
-  if (!node) return false;
-  if (node.type === 'StringLiteral') return true;
-  if (node.type === 'TemplateLiteral') {
-    // Is constant only if there are no interpolations
-    return !(node.expressions && node.expressions.length > 0);
-  }
-  if (node.type === 'BinaryExpression' && node.operator === '+') {
-    return isConstantStringExpression(node.left) && isConstantStringExpression(node.right);
-  }
-  return false;
-}
-
 function isSafeSQLExpression(node) {
   if (!node) return false;
-  if (node.type === 'StringLiteral') return true;
+  if (node.type === 'StringLiteral' || node.type === 'NumericLiteral') return true;
+  if (node.type === 'BooleanLiteral' || node.type === 'NullLiteral') return true;
   if (node.type === 'TemplateLiteral') {
-    // Safe only if there are no interpolations
-    return !(node.expressions && node.expressions.length > 0);
+    // Safe if all interpolations are safe
+    return node.expressions.every(isSafeSQLExpression);
   }
-  if (node.type === 'BinaryExpression') {
-    return isConstantStringExpression(node);
+  if (node.type === 'BinaryExpression' && node.operator === '+') {
+    // Concatenation: both sides must be safe
+    return isSafeSQLExpression(node.left) && isSafeSQLExpression(node.right);
+  }
+  if (node.type === 'ConditionalExpression') {
+    // Ternary: both branches must be safe
+    return isSafeSQLExpression(node.consequent) && isSafeSQLExpression(node.alternate);
   }
   return false;
 }

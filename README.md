@@ -20,6 +20,21 @@ knex-sql-injection-detector <path> [options]
 
 **Node modules scanning:** By default, all files in `node_modules` are skipped. However, if the path you provide contains `node_modules` (e.g., `./node_modules/some-package`), the tool will scan all `node_modules` folders in all inner paths as well.
 
+## What is considered safe?
+
+A query is considered **safe** if the SQL string is constructed only from:
+- String literals (e.g., `'SELECT * FROM users'`)
+- Numeric literals (e.g., `42`)
+- Boolean literals (`true`, `false`)
+- `null`
+- Template literals with only constant expressions (string, number, boolean, null, or ternary expressions that resolve to constants)
+- Concatenations (`+`) of only such constants
+
+A query is considered **unsafe** if:
+- The SQL string contains any dynamic value (variable, function call, etc.)
+- A template literal contains any non-constant interpolation
+- A concatenation includes any non-constant part
+
 ## Options
 
 - `--only-errors`  
@@ -44,9 +59,9 @@ knex-sql-injection-detector <path> [options]
 ## Output
 
 - `[error] Potential SQL injection ...`  
-  Indicates a likely SQL injection risk (e.g., template literals with interpolations, or non-literal query sources).
+  Indicates a likely SQL injection risk (e.g., template literals with non-constant interpolations, or any dynamic/non-constant query source).
 - `[info] knex raw function call ...`  
-  Indicates a safe or non-flagged usage.
+  Indicates a likely safe usage: the query is constructed only from constants as described above.
 
 - `[stats]`  
   At the end, prints total raw function calls and total potential SQL injections found.

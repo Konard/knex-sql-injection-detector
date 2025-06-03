@@ -1,7 +1,8 @@
 {
   "name": "knex-sql-injection-detector",
-  "version": "1.0.1",
-  "description": "A tool to detect potential SQL injections for knex",
+  "version": "1.1.0",
+  "description": "A CLI tool to detect potential SQL injection risks in knex.js codebases by analyzing raw SQL query construction.",
+  "type": "module",
   "main": "cli.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,15 +11,30 @@
     "knex",
     "sql",
     "injection",
-    "detector"
+    "detector",
+    "security",
+    "cli",
+    "static-analysis",
+    "lint",
+    "javascript",
+    "query",
+    "analysis"
   ],
   "license": "Unlicense",
   "bin": {
     "knex-sql-injection-detector": "cli.mjs"
   },
+  "files": [
+    "cli.mjs",
+    "README.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/konard/knex-sql-injection-detector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/konard/knex-sql-injection-detector/issues"
   },
   "dependencies": {
     "@babel/parser": "^7.27.4",

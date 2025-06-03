@@ -1,6 +1,7 @@
 const db = require('knex')();
 
 let userId = 42;
+let randomBoolean = Math.random() > 0.5;
 
 // Unsafe
 db.raw(`SELECT * FROM users WHERE id = ${userId}`);
@@ -43,3 +44,9 @@ db.raw(
   `SELECT * `
 + `FROM users`
 + `WHERE id = 1`);
+
+// Safe
+db.raw(
+  `SELECT * `
++ `FROM users`
++ `WHERE id = ${randomBoolean ? 1 : 2}`);

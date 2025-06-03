@@ -20,6 +20,15 @@ const rawMethods = [
   'havingRaw',
 ];
 
+function isAllConstantStringLiterals(node) {
+  if (!node) return false;
+  if (node.type === 'StringLiteral') return true;
+  if (node.type === 'BinaryExpression' && node.operator === '+') {
+    return isAllConstantStringLiterals(node.left) && isAllConstantStringLiterals(node.right);
+  }
+  return false;
+}
+
 function analyzeCode(code, filePath) {
   let ast;
   try {
@@ -60,9 +69,18 @@ function analyzeCode(code, filePath) {
         ) {
           type = 'info';
         } else if (
-          firstArg && firstArg.type !== 'StringLiteral' && firstArg.type !== 'TemplateLiteral'
+          firstArg?.type === 'BinaryExpression' &&
+          isAllConstantStringLiterals(firstArg) &&
+          secondArg?.type === 'ArrayExpression'
         ) {
-          // Any non-literal (e.g., Identifier, CallExpression, etc.) is unsafe
+          type = 'info';
+        } else if (
+          firstArg && (
+            (firstArg.type === 'BinaryExpression' && !isAllConstantStringLiterals(firstArg)) ||
+            (firstArg.type !== 'StringLiteral' && firstArg.type !== 'TemplateLiteral' && firstArg.type !== 'BinaryExpression')
+          )
+        ) {
+          // Any non-literal (e.g., Identifier, CallExpression, or non-literal BinaryExpression) is unsafe
           type = 'unsafe';
         }
         results.push({

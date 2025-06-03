@@ -138,6 +138,11 @@ const userExplicitlyWantsNodeModules = includeNodeModules || targetPath.includes
 
 const limit = pLimit(256);
 
+function quoteCode(code) {
+  // Add two spaces at the start of each line
+  return code.split('\n').map(line => '  ' + line).join('\n');
+}
+
 await Promise.all(files.map(file =>
   limit(async () => {
     // Skip node_modules unless explicitly requested
@@ -167,14 +172,14 @@ await Promise.all(files.map(file =>
         if (!codeQuotes) {
           console.error(`[error] Potential SQL injection at ${f.filePath}:${f.line}:${f.column}`);
         } else {
-          console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+          console.error(`[error] Potential SQL injection:\n\n${quoteCode(f.code)}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
         }
       } else if (!onlyErrors) {
         totalSafe++;
         if (!codeQuotes) {
           console.info(`[info] knex raw function call at ${f.filePath}:${f.line}:${f.column}`);
         } else {
-          console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+          console.info(`[info] knex raw function call:\n\n${quoteCode(f.code)}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
         }
       }
     }

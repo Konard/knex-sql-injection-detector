@@ -6,8 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "knex",
+    "sql",
+    "injection",
+    "detector"
+  ],
   "license": "Unlicense",
   "bin": {
     "knex-sql-injection-detector": "cli.js"

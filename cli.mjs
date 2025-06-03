@@ -125,6 +125,15 @@ const limit = pLimit(256);
 
 await Promise.all(files.map(file =>
   limit(async () => {
+    let stat;
+    try {
+      stat = await fs.stat(file);
+    } catch (e) {
+      return; // skip unreadable
+    }
+    if (!stat.isFile()) {
+      return; // skip directories and non-files
+    }
     const code = await fs.readFile(file, 'utf8');
     const findings = analyzeCode(code, file);
     for (const f of findings) {

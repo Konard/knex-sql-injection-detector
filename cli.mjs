@@ -29,6 +29,19 @@ function isAllConstantStringLiterals(node) {
   return false;
 }
 
+function isSafeSQLExpression(node) {
+  if (!node) return false;
+  if (node.type === 'StringLiteral') return true;
+  if (node.type === 'TemplateLiteral') {
+    // Safe only if there are no interpolations
+    return !(node.expressions && node.expressions.length > 0);
+  }
+  if (node.type === 'BinaryExpression') {
+    return isAllConstantStringLiterals(node);
+  }
+  return false;
+}
+
 function analyzeCode(code, filePath) {
   let ast;
   try {
@@ -50,39 +63,8 @@ function analyzeCode(code, filePath) {
         rawMethods.includes(node.callee.property.name)
       ) {
         const firstArg = node.arguments[0];
-        const secondArg = node.arguments[1];
         const loc = node.loc;
-        let type = 'info';
-        if (firstArg?.type === 'TemplateLiteral') {
-          // Unsafe only if there are expressions (interpolations) in the template
-          if (firstArg.expressions && firstArg.expressions.length > 0) {
-            type = 'unsafe';
-          } else {
-            // Template literal with no interpolations is treated as a string literal
-            if (secondArg?.type === 'ArrayExpression') {
-              type = 'info';
-            }
-          }
-        } else if (
-          firstArg?.type === 'StringLiteral' &&
-          secondArg?.type === 'ArrayExpression'
-        ) {
-          type = 'info';
-        } else if (
-          firstArg?.type === 'BinaryExpression' &&
-          isAllConstantStringLiterals(firstArg) &&
-          secondArg?.type === 'ArrayExpression'
-        ) {
-          type = 'info';
-        } else if (
-          firstArg && (
-            (firstArg.type === 'BinaryExpression' && !isAllConstantStringLiterals(firstArg)) ||
-            (firstArg.type !== 'StringLiteral' && firstArg.type !== 'TemplateLiteral' && firstArg.type !== 'BinaryExpression')
-          )
-        ) {
-          // Any non-literal (e.g., Identifier, CallExpression, or non-literal BinaryExpression) is unsafe
-          type = 'unsafe';
-        }
+        let type = isSafeSQLExpression(firstArg) ? 'info' : 'unsafe';
         results.push({
           type,
           code: code.slice(node.start, node.end),

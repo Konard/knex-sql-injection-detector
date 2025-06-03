@@ -16,10 +16,14 @@ knex-sql-injection-detector <path> [options]
 
 - `<path>`: Path to a file or directory to scan for potential SQL injections in knex raw queries.
 
+**Note:** Only `.js` files are currently supported. Files with other extensions (e.g., `.ts`, `.jsx`) are ignored.
+
+**Node modules scanning:** By default, all files in `node_modules` are skipped. However, if the path you provide contains `node_modules` (e.g., `./node_modules/some-package`), the tool will scan all `node_modules` folders in all inner paths as well.
+
 ## Options
 
 - `--only-errors`  
-  Print only errors (potential SQL injections). Suppresses info output for safe/unknown calls.  
+  Print only errors (potential SQL injections). Suppresses info output for potentially safe calls.  
   **Default:** false
 
 - `--code-quotes`  

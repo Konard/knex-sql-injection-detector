@@ -7,6 +7,16 @@ const traverse = require('@babel/traverse').default;
 const glob = require('glob');
 const yargs = require('yargs');
 
+const rawMethods = [
+  'raw',
+  'whereRaw',
+  'fromRaw',
+  'joinRaw',
+  'groupByRaw',
+  'orderByRaw',
+  'havingRaw',
+];
+
 function analyzeCode(code, filePath) {
   let ast;
   try {
@@ -25,7 +35,7 @@ function analyzeCode(code, filePath) {
       const { node } = path;
       if (
         node.callee.type === 'MemberExpression' &&
-        node.callee.property.name === 'raw'
+        rawMethods.includes(node.callee.property.name)
       ) {
         const firstArg = node.arguments[0];
         const secondArg = node.arguments[1];
@@ -89,11 +99,18 @@ const argv = yargs
     description: 'Print only errors (potential SQL injections)',
     default: false,
   })
+  .option('code-quotes', {
+    type: 'boolean',
+    description: 'Print code and extra spacing in output (disable for single-line output)',
+    default: true,
+  })
   .help()
   .argv;
 
 const targetPath = argv._[0];
 const onlyErrors = argv['only-errors'];
+const codeQuotes = argv['code-quotes'];
+console.log('codeQuotes', codeQuotes);
 const files = getAllJsFiles(targetPath);
 
 let totalRaw = 0;
@@ -110,10 +127,18 @@ files.forEach(file => {
     if (f.type === 'unsafe') {
       totalUnsafe++;
       hadError = true;
-      console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+      if (!codeQuotes) {
+        console.error(`[error] Potential SQL injection at ${f.filePath}:${f.line}:${f.column}`);
+      } else {
+        console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+      }
     } else if (!onlyErrors) {
       totalSafe++;
-      console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+      if (!codeQuotes) {
+        console.info(`[info] knex raw function call at ${f.filePath}:${f.line}:${f.column}`);
+      } else {
+        console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+      }
     }
   });
 });

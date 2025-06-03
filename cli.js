@@ -30,7 +30,7 @@ function analyzeCode(code, filePath) {
         const firstArg = node.arguments[0];
         const secondArg = node.arguments[1];
         const loc = node.loc;
-        let type = 'unknown';
+        let type = 'info';
         if (firstArg?.type === 'TemplateLiteral') {
           // Unsafe only if there are expressions (interpolations) in the template
           if (firstArg.expressions && firstArg.expressions.length > 0) {
@@ -38,20 +38,14 @@ function analyzeCode(code, filePath) {
           } else {
             // Template literal with no interpolations is treated as a string literal
             if (secondArg?.type === 'ArrayExpression') {
-              type = 'safe';
-            } else {
-              type = 'unknown';
+              type = 'info';
             }
           }
         } else if (
           firstArg?.type === 'StringLiteral' &&
           secondArg?.type === 'ArrayExpression'
         ) {
-          type = 'safe';
-        } else if (
-          firstArg?.type === 'StringLiteral'
-        ) {
-          type = 'unknown';
+          type = 'info';
         } else if (
           firstArg && firstArg.type !== 'StringLiteral' && firstArg.type !== 'TemplateLiteral'
         ) {
@@ -111,12 +105,9 @@ files.forEach(file => {
       totalUnsafe++;
       hadError = true;
       console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
-    } else if (f.type === 'safe') {
+    } else {
       totalSafe++;
       console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
-    } else {
-      totalUnknown++;
-      console.info(`[info] knex raw function call (unknown safety):\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
     }
   });
 });

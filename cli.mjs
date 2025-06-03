@@ -2,7 +2,6 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import { glob } from 'glob';
@@ -113,6 +112,11 @@ const argv = yargs(hideBin(process.argv))
     description: 'Glob patterns for files/folders to ignore (e.g. --ignore "**/migrations/**" "**/test/**")',
     default: [],
   })
+  .option('include-node-modules', {
+    type: 'boolean',
+    description: 'Include node_modules in scan (default: false)',
+    default: false,
+  })
   .help()
   .argv;
 
@@ -120,6 +124,7 @@ const targetPath = argv._[0];
 const onlyErrors = argv['only-errors'];
 const codeQuotes = argv['code-quotes'];
 const ignorePatterns = argv.ignore;
+const includeNodeModules = argv['include-node-modules'];
 
 let totalRaw = 0;
 let totalUnsafe = 0;
@@ -129,7 +134,7 @@ let hadError = false;
 const files = await getAllJsFiles(targetPath);
 
 // Determine if user explicitly wants node_modules
-const userExplicitlyWantsNodeModules = targetPath.includes('node_modules');
+const userExplicitlyWantsNodeModules = includeNodeModules || targetPath.includes('node_modules');
 
 const limit = pLimit(256);
 

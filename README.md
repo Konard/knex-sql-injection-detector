@@ -32,7 +32,7 @@ knex-sql-injection-detector <path> [options]
 
 - `--ignore <pattern ...>`  
   Glob patterns for files/folders to ignore. You can specify multiple patterns.  
-  Example: `--ignore "**/migrations/**" "**/test/**"`
+  Example: `--ignore "**/migration**" "**/test**"`
 
 - `--include-node-modules`  
   Include `node_modules` in the scan. By default, all files in `node_modules` are skipped unless you explicitly provide a path inside `node_modules` or use this flag.  
@@ -54,7 +54,10 @@ knex-sql-injection-detector <path> [options]
 ## Example
 
 ```sh
-knex-sql-injection-detector ./src --only-errors --no-code-quotes --ignore "**/migrations/**"
+knex-sql-injection-detector ./src \
+  --ignore "**/migrations/**" \
+  --only-errors \
+  --no-code-quotes
 ```
 
 This will scan all `.js` files in `./src`, print only errors in single-line format, and skip any files in `migrations` folders.

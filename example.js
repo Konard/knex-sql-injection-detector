@@ -37,3 +37,9 @@ db.raw(
   'SELECT * '
 + 'FROM users'
 + 'WHERE id = 1');
+
+// Safe
+db.raw(
+  `SELECT * `
++ `FROM users`
++ `WHERE id = 1`);

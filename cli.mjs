@@ -20,11 +20,15 @@ const rawMethods = [
   'havingRaw',
 ];
 
-function isAllConstantStringLiterals(node) {
+function isConstantStringExpression(node) {
   if (!node) return false;
   if (node.type === 'StringLiteral') return true;
+  if (node.type === 'TemplateLiteral') {
+    // Is constant only if there are no interpolations
+    return !(node.expressions && node.expressions.length > 0);
+  }
   if (node.type === 'BinaryExpression' && node.operator === '+') {
-    return isAllConstantStringLiterals(node.left) && isAllConstantStringLiterals(node.right);
+    return isConstantStringExpression(node.left) && isConstantStringExpression(node.right);
   }
   return false;
 }
@@ -37,7 +41,7 @@ function isSafeSQLExpression(node) {
     return !(node.expressions && node.expressions.length > 0);
   }
   if (node.type === 'BinaryExpression') {
-    return isAllConstantStringLiterals(node);
+    return isConstantStringExpression(node);
   }
   return false;
 }

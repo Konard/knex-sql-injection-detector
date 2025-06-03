@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const parser = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
+const glob = require('glob');
+const yargs = require('yargs');
+
+function analyzeCode(code, filePath) {
+  let ast;
+  try {
+    ast = parser.parse(code, {
+      sourceType: 'module',
+      plugins: [], // Only JS
+    });
+  } catch (e) {
+    return [];
+  }
+
+  const results = [];
+
+  traverse(ast, {
+    CallExpression(path) {
+      const { node } = path;
+      if (
+        node.callee.type === 'MemberExpression' &&
+        node.callee.property.name === 'raw'
+      ) {
+        const firstArg = node.arguments[0];
+        const secondArg = node.arguments[1];
+        const loc = node.loc;
+        let type = 'unknown';
+        if (firstArg?.type === 'TemplateLiteral') {
+          type = 'unsafe';
+        } else if (
+          firstArg?.type === 'StringLiteral' &&
+          secondArg?.type === 'ArrayExpression'
+        ) {
+          type = 'safe';
+        } else if (
+          firstArg && firstArg.type !== 'StringLiteral'
+        ) {
+          // Any non-literal (e.g., Identifier, CallExpression, etc.) is unsafe
+          type = 'unsafe';
+        }
+        results.push({
+          type,
+          code: code.slice(node.start, node.end),
+          filePath,
+          line: loc ? loc.start.line : null,
+          column: loc ? loc.start.column + 1 : null,
+        });
+      }
+    },
+  });
+
+  return results;
+}
+
+function getAllJsFiles(targetPath) {
+  let stat;
+  try {
+    stat = fs.statSync(targetPath);
+  } catch (e) {
+    return [];
+  }
+  if (stat.isDirectory()) {
+    return glob.sync(path.join(targetPath, '**/*.js'));
+  } else if (stat.isFile() && targetPath.endsWith('.js')) {
+    return [targetPath];
+  }
+  return [];
+}
+
+const argv = yargs
+  .usage('Usage: $0 <path>')
+  .demandCommand(1)
+  .help()
+  .argv;
+
+const targetPath = argv._[0];
+const files = getAllJsFiles(targetPath);
+
+let totalRaw = 0;
+let totalUnsafe = 0;
+let totalSafe = 0;
+let totalUnknown = 0;
+let hadError = false;
+
+files.forEach(file => {
+  const code = fs.readFileSync(file, 'utf8');
+  const findings = analyzeCode(code, file);
+  findings.forEach(f => {
+    totalRaw++;
+    if (f.type === 'unsafe') {
+      totalUnsafe++;
+      hadError = true;
+      console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+    } else if (f.type === 'safe') {
+      totalSafe++;
+      console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+    } else {
+      totalUnknown++;
+      console.info(`[info] knex raw function call (unknown safety):\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+    }
+  });
+});
+
+console.log(`\n[stats] Total raw calls: ${totalRaw}`);
+console.log(`[stats] Total potential SQL injections: ${totalUnsafe}`);
+
+if (hadError) {
+  process.exit(1);
+} 

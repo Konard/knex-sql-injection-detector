@@ -1,16 +1,21 @@
 {
   "name": "knex-sql-injection-detector",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A tool to detect potential SQL injections for knex",
-  "main": "index.js",
+  "main": "cli.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "Unlicense",
+  "bin": {
+    "knex-sql-injection-detector": "cli.js"
+  },
   "dependencies": {
     "@babel/parser": "^7.27.4",
-    "@babel/traverse": "^7.27.4"
+    "@babel/traverse": "^7.27.4",
+    "yargs": "^17.7.2",
+    "glob": "^10.3.10"
   }
 }

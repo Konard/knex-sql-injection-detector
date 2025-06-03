@@ -110,13 +110,11 @@ const argv = yargs
 const targetPath = argv._[0];
 const onlyErrors = argv['only-errors'];
 const codeQuotes = argv['code-quotes'];
-console.log('codeQuotes', codeQuotes);
 const files = getAllJsFiles(targetPath);
 
 let totalRaw = 0;
 let totalUnsafe = 0;
 let totalSafe = 0;
-let totalUnknown = 0;
 let hadError = false;
 
 files.forEach(file => {

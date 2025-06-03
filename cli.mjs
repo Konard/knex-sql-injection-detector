@@ -9,6 +9,7 @@ import { glob } from 'glob';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import pLimit from 'p-limit';
+import { minimatch } from 'minimatch';
 
 const rawMethods = [
   'raw',
@@ -107,12 +108,18 @@ const argv = yargs(hideBin(process.argv))
     description: 'Print code and extra spacing in output (disable for single-line output)',
     default: true,
   })
+  .option('ignore', {
+    type: 'array',
+    description: 'Glob patterns for files/folders to ignore (e.g. --ignore "**/migrations/**" "**/test/**")',
+    default: [],
+  })
   .help()
   .argv;
 
 const targetPath = argv._[0];
 const onlyErrors = argv['only-errors'];
 const codeQuotes = argv['code-quotes'];
+const ignorePatterns = argv.ignore;
 
 let totalRaw = 0;
 let totalUnsafe = 0;
@@ -130,6 +137,10 @@ await Promise.all(files.map(file =>
   limit(async () => {
     // Skip node_modules unless explicitly requested
     if (!userExplicitlyWantsNodeModules && file.includes('node_modules')) {
+      return;
+    }
+    // Skip files matching any ignore pattern
+    if (ignorePatterns.some(pattern => minimatch(file, pattern))) {
       return;
     }
     let stat;

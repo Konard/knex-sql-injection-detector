@@ -120,33 +120,29 @@ let hadError = false;
 
 const files = await getAllJsFiles(targetPath);
 
-const allFindings = [];
-
 await Promise.all(files.map(async file => {
   const code = await fs.readFile(file, 'utf8');
   const findings = analyzeCode(code, file);
-  allFindings.push(...findings);
-}));
-
-for (const f of allFindings) {
-  totalRaw++;
-  if (f.type === 'unsafe') {
-    totalUnsafe++;
-    hadError = true;
-    if (!codeQuotes) {
-      console.error(`[error] Potential SQL injection at ${f.filePath}:${f.line}:${f.column}`);
-    } else {
-      console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
-    }
-  } else if (!onlyErrors) {
-    totalSafe++;
-    if (!codeQuotes) {
-      console.info(`[info] knex raw function call at ${f.filePath}:${f.line}:${f.column}`);
-    } else {
-      console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+  for (const f of findings) {
+    totalRaw++;
+    if (f.type === 'unsafe') {
+      totalUnsafe++;
+      hadError = true;
+      if (!codeQuotes) {
+        console.error(`[error] Potential SQL injection at ${f.filePath}:${f.line}:${f.column}`);
+      } else {
+        console.error(`[error] Potential SQL injection:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+      }
+    } else if (!onlyErrors) {
+      totalSafe++;
+      if (!codeQuotes) {
+        console.info(`[info] knex raw function call at ${f.filePath}:${f.line}:${f.column}`);
+      } else {
+        console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
+      }
     }
   }
-}
+}));
 
 console.log(`[stats]`);
 console.log(`  Total raw function calls: ${totalRaw}`);
@@ -154,4 +150,4 @@ console.log(`  Total potential SQL injections: ${totalUnsafe}`);
 
 if (hadError) {
   process.exit(1);
-} 
+}

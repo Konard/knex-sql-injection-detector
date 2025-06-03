@@ -5,8 +5,11 @@ let userId = 42;
 // Unsafe
 db.raw(`SELECT * FROM users WHERE id = ${userId}`);
 
+// Unsafe
+db.raw(queryString);
+
 // Safe
 db.raw('SELECT * FROM users WHERE id = ?', [userId]);
 
-// Unknown
-db.raw(queryString);
+// Safe
+db.raw(`select * from func(?, ?, ?, ?)`, [1, 2, 3, 4])

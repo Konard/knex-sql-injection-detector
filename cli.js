@@ -32,14 +32,28 @@ function analyzeCode(code, filePath) {
         const loc = node.loc;
         let type = 'unknown';
         if (firstArg?.type === 'TemplateLiteral') {
-          type = 'unsafe';
+          // Unsafe only if there are expressions (interpolations) in the template
+          if (firstArg.expressions && firstArg.expressions.length > 0) {
+            type = 'unsafe';
+          } else {
+            // Template literal with no interpolations is treated as a string literal
+            if (secondArg?.type === 'ArrayExpression') {
+              type = 'safe';
+            } else {
+              type = 'unknown';
+            }
+          }
         } else if (
           firstArg?.type === 'StringLiteral' &&
           secondArg?.type === 'ArrayExpression'
         ) {
           type = 'safe';
         } else if (
-          firstArg && firstArg.type !== 'StringLiteral'
+          firstArg?.type === 'StringLiteral'
+        ) {
+          type = 'unknown';
+        } else if (
+          firstArg && firstArg.type !== 'StringLiteral' && firstArg.type !== 'TemplateLiteral'
         ) {
           // Any non-literal (e.g., Identifier, CallExpression, etc.) is unsafe
           type = 'unsafe';
@@ -107,7 +121,7 @@ files.forEach(file => {
   });
 });
 
-console.log(`\n[stats] Total raw calls: ${totalRaw}`);
+console.log(`\n[stats] Total raw function calls: ${totalRaw}`);
 console.log(`[stats] Total potential SQL injections: ${totalUnsafe}`);
 
 if (hadError) {

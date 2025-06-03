@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const parser = require('@babel/parser');
-const traverse = require('@babel/traverse').default;
-const glob = require('glob');
-const yargs = require('yargs');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import parser from '@babel/parser';
+import traverse from '@babel/traverse';
+import { glob } from 'glob';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 const rawMethods = [
   'raw',
@@ -30,7 +32,7 @@ function analyzeCode(code, filePath) {
 
   const results = [];
 
-  traverse(ast, {
+  traverse.default(ast, {
     CallExpression(path) {
       const { node } = path;
       if (
@@ -76,22 +78,22 @@ function analyzeCode(code, filePath) {
   return results;
 }
 
-function getAllJsFiles(targetPath) {
+async function getAllJsFiles(targetPath) {
   let stat;
   try {
-    stat = fs.statSync(targetPath);
+    stat = await fs.stat(targetPath);
   } catch (e) {
     return [];
   }
   if (stat.isDirectory()) {
-    return glob.sync(path.join(targetPath, '**/*.js'));
+    return await glob(path.join(targetPath, '**/*.js'));
   } else if (stat.isFile() && targetPath.endsWith('.js')) {
     return [targetPath];
   }
   return [];
 }
 
-const argv = yargs
+const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 <path>')
   .demandCommand(1)
   .option('only-errors', {
@@ -110,17 +112,18 @@ const argv = yargs
 const targetPath = argv._[0];
 const onlyErrors = argv['only-errors'];
 const codeQuotes = argv['code-quotes'];
-const files = getAllJsFiles(targetPath);
 
 let totalRaw = 0;
 let totalUnsafe = 0;
 let totalSafe = 0;
 let hadError = false;
 
-files.forEach(file => {
-  const code = fs.readFileSync(file, 'utf8');
+const files = await getAllJsFiles(targetPath);
+
+for (const file of files) {
+  const code = await fs.readFile(file, 'utf8');
   const findings = analyzeCode(code, file);
-  findings.forEach(f => {
+  for (const f of findings) {
     totalRaw++;
     if (f.type === 'unsafe') {
       totalUnsafe++;
@@ -138,8 +141,8 @@ files.forEach(file => {
         console.info(`[info] knex raw function call:\n\n  ${f.code}\n\nat ${f.filePath}:${f.line}:${f.column}\n`);
       }
     }
-  });
-});
+  }
+}
 
 console.log(`[stats]`);
 console.log(`  Total raw function calls: ${totalRaw}`);
@@ -147,4 +150,4 @@ console.log(`  Total potential SQL injections: ${totalUnsafe}`);
 
 if (hadError) {
   process.exit(1);
-}
+} 
